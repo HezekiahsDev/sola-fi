@@ -1,55 +1,81 @@
-// Central color palette for the wallet application.
-// The dark palette is primary; light palette approximates accessible complements.
+// Brand Color System (Rebrand 2025)
+// Source palette provided by design brief:
+// Primary Purple: #6C63FF
+// Deep Purple: #3E2F7F
+// Lavender Tint: #B5A8FF
+// Aqua Blue (success/action): #3DDC97
+// Neon Pink (secondary CTA / highlight): #FF4F9A
+// Gold (premium accent): #F5B700
+// Dark Background: #121212
+// Text Primary (on dark): #EDEDED / (on light): #1A1A1A
+// Text Secondary: #A0A0B2
 
+// Design tokens (base/palette) - keep semantic naming distinct from theme slots.
 const palette = {
-  // warmer off-white for on-dark surfaces
-  text: '#F3EFEA',
-  // deep, slightly purple-tinted background for low visual fatigue
-  background: '#0B0712',
-  // primary lilac / violet — energetic but not harsh
-  primary: '#8B5CF6',
-  tabIconDefault: '#A9A3B8',
-  tabIconSelected: '#8B5CF6',
-  // surface panels slightly lighter than background with a cool purple tint
-  surface: '#100D1A',
-  // muted hints in a soft lilac gray
-  muted: '#B9AEDC',
-  border: '#231E2B',
-  success: '#16A34A',
+  primary: '#6C63FF',
+  primaryDeep: '#3E2F7F',
+  primaryTint: '#B5A8FF',
+  accentAqua: '#3DDC97',
+  accentPink: '#FF4F9A',
+  accentGold: '#F5B700',
+  backgroundDark: '#121212',
+  backgroundLight: '#FFFFFF',
+  // Derived/supporting neutrals & surfaces
+  surfaceDark: '#1A1624', // slightly lifted from dark bg with purple influence
+  surfaceLight: '#F7F7FA',
+  borderDark: '#272238',
+  borderLight: '#E3E1EC',
+  textOnDark: '#EDEDED',
+  textOnLight: '#1A1A1A',
+  textSecondaryDark: '#A0A0B2',
+  textSecondaryLight: '#575766',
+  // Feedback & status (map where possible to brand accents)
+  success: '#3DDC97',
   error: '#EF4444',
-  warning: '#F59E0B',
-  info: '#60A5FA',
+  warning: '#F5B700',
+  info: '#6C63FF', // primary as info highlight
 };
 
 export type AppColorName = keyof typeof palette | 'tint';
 
 export default {
   light: {
-    text: '#000000',
-    background: '#FFFFFF',
-  tint: palette.primary,
-    tabIconDefault: '#CCCCCC',
+    text: palette.textOnLight,
+    background: palette.backgroundLight,
+    tint: palette.primary,
+    tabIconDefault: palette.primaryTint,
     tabIconSelected: palette.primary,
-    surface: '#F5F5F5',
-    muted: '#6B7280',
-    border: '#E5E7EB',
+    surface: palette.surfaceLight,
+    muted: palette.textSecondaryLight,
+    border: palette.borderLight,
     success: palette.success,
     error: palette.error,
     warning: palette.warning,
     info: palette.info,
+    // Extended brand accents (optional usage in components)
+    accentAqua: palette.accentAqua,
+    accentPink: palette.accentPink,
+    accentGold: palette.accentGold,
+    primaryDeep: palette.primaryDeep,
+    primaryTint: palette.primaryTint,
   },
   dark: {
-  text: palette.text,
-  background: palette.background,
-  tint: palette.primary,
-  tabIconDefault: palette.tabIconDefault,
-  tabIconSelected: palette.tabIconSelected,
-  surface: palette.surface,
-  muted: palette.muted,
-  border: palette.border,
-  success: palette.success,
-  error: palette.error,
-  warning: palette.warning,
-  info: palette.info,
+    text: palette.textOnDark,
+    background: palette.backgroundDark,
+    tint: palette.primary,
+    tabIconDefault: palette.primaryTint,
+    tabIconSelected: palette.primary,
+    surface: palette.surfaceDark,
+    muted: palette.textSecondaryDark,
+    border: palette.borderDark,
+    success: palette.success,
+    error: palette.error,
+    warning: palette.warning,
+    info: palette.info,
+    accentAqua: palette.accentAqua,
+    accentPink: palette.accentPink,
+    accentGold: palette.accentGold,
+    primaryDeep: palette.primaryDeep,
+    primaryTint: palette.primaryTint,
   },
 };

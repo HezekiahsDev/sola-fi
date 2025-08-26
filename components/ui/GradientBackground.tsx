@@ -7,13 +7,15 @@ import { ViewProps } from '@/components/Themed';
 export default function GradientBackground({ children, style }: React.PropsWithChildren<ViewProps>) {
   return (
     <LinearGradient
-      colors={[ '#00111A', '#001F33', '#000000' ]}
+      // Base brand gradient: deep purple to near-black
+      colors={[ '#3E2F7F', '#241B4A', '#121212' ]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.base, style]}
     >
       <LinearGradient
-        colors={[ 'rgba(47,149,220,0.35)', 'rgba(14,165,233,0.05)', 'transparent' ]}
+        // Soft accent glow using primary + aqua subtle mix
+        colors={[ 'rgba(108,99,255,0.35)', 'rgba(61,220,151,0.08)', 'transparent' ]}
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.8, y: 1 }}
         style={StyleSheet.absoluteFill}

@@ -3,10 +3,11 @@ import { Animated, StyleSheet, Platform, StatusBar as RNStatusBar, AppState } fr
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Animated multi-stop gradient by rotating hue via interpolation.
-export default function AnimatedGradient({ children, style, extendUnderStatusBar = true }: React.PropsWithChildren<{ style?: any; extendUnderStatusBar?: boolean }>) {
+export default function AnimatedGradient({ children, style, extendUnderStatusBar = true, staticMode }: React.PropsWithChildren<{ style?: any; extendUnderStatusBar?: boolean; staticMode?: boolean }>) {
   const anim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (staticMode) return; // skip animation for performance / focus stability
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(anim, { toValue: 1, duration: 12000, useNativeDriver: false }),
@@ -35,22 +36,23 @@ export default function AnimatedGradient({ children, style, extendUnderStatusBar
     };
   }, [anim]);
 
-  const c1 = anim.interpolate({ inputRange: [0,1], outputRange: ['rgba(47,149,220,0.55)', 'rgba(14,165,233,0.55)'] });
-  const c2 = anim.interpolate({ inputRange: [0,1], outputRange: ['rgba(14,165,233,0.15)', 'rgba(47,149,220,0.15)'] });
+  // Animated brand glow shifting between primary purple + neon pink accent
+  const c1 = staticMode ? 'rgba(108,99,255,0.40)' : anim.interpolate({ inputRange: [0,1], outputRange: ['rgba(108,99,255,0.50)', 'rgba(255,79,154,0.50)'] });
+  const c2 = staticMode ? 'rgba(61,220,151,0.14)' : anim.interpolate({ inputRange: [0,1], outputRange: ['rgba(255,79,154,0.18)', 'rgba(61,220,151,0.18)'] });
 
   const paddingTop = extendUnderStatusBar ? (Platform.OS === 'android' ? RNStatusBar.currentHeight ?? 24 : 44) : 0;
 
   return (
     <Animated.View style={[styles.container, { paddingTop }, style]}>      
       <LinearGradient
-        colors={['#000000','#00111A','#001F33']}
+        colors={['#3E2F7F','#241B4A','#121212']}
         start={{x:0,y:0}}
         end={{x:1,y:1}}
         style={StyleSheet.absoluteFill}
       />
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: 1 }]}>        
         <LinearGradient
-          colors={[ '#00000000', '#00000000' ]}
+          colors={[ 'rgba(108,99,255,0.15)', 'rgba(62,47,127,0.05)' ]}
           style={StyleSheet.absoluteFill}
         />
         <Animated.View style={[styles.blurBlob, { backgroundColor: c1 }]} />

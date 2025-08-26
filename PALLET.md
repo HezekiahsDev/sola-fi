@@ -1,25 +1,24 @@
-🎨 Final Color Palette
+🎨 Primary Colors (Purplish Core)
 
-text: #FFFFFF
+Primary Purple: #6C63FF (modern, vibrant purple)
 
-background: #000000
+Deep Purple: #3E2F7F (trust, premium feel)
 
-primary / tint: #2F95DC
+Lavender Tint: #B5A8FF (soft background / highlight)
 
-tabIconDefault: #CCCCCC
+✨ Accent Colors (For highlights & actions)
 
-tabIconSelected: #2F95DC
+Aqua Blue: #3DDC97 (for "success" states, confirm buttons)
 
-surface (cards, panels): #111111
+Neon Pink: #FF4F9A (subtle highlights, secondary CTAs)
 
-muted / hint: #9CA3AF
+Gold: #F5B700 (optional accent for premium/crypto wealth vibe)
 
-border: #222222
+⚪ Neutral Backgrounds & Text
 
-success: #16A34A
+Dark BG: #121212 (for dark mode base)
 
-error: #EF4444
 
-warning: #F59E0B
+Text Primary: #EDEDED (light text on dark) / #1A1A1A (dark text on light)
 
-info: #0EA5E9
+Text Secondary: #A0A0B2 (muted labels, hints)
