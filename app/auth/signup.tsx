@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import InputField from '@/components/ui/InputField';
 import { useToast } from '@/components/ui/Toast';
+import { Keypair } from '@solana/web3.js';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -45,16 +46,59 @@ export default function SignupScreen() {
 
   try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+
+      // Create a new Solana wallet
+      const keypair = Keypair.generate();
+      const publicKey = keypair.publicKey.toBase58();
+  const privateKey = Array.from(keypair.secretKey);
+
+
+      const { data, error } = await supabase.auth.signUp(
+        { email, password },
+        { data: { public_key: publicKey, private_key: privateKey } }
+      );
+      
 
       if (error) {
         Alert.alert('Signup failed', error.message);
       } else {
-    toast.push('Account created! Verify email then sign in.', { type: 'success' });
-    router.replace('/auth/login?justSignedUp=1');
+        // Ensure we have an authenticated session for the new user. If
+        // signUp didn't create a session, sign in now so RLS policies that
+        // rely on auth.uid() will permit inserting the wallet row.
+        let userId: string | null = data?.user?.id ?? null;
+        try {
+          // If there's no user id from signUp, or the current client session
+          // isn't authenticated yet, attempt to sign in with the provided
+          // credentials to establish a session.
+            if (!userId) {
+            const signInResp: any = await supabase.auth.signInWithPassword({ email, password });
+            userId = signInResp?.data?.user?.id ?? null;
+          } else {
+            // Also attempt to ensure client session is available by calling getUser
+            const userResp: any = await supabase.auth.getUser();
+            if (!userResp?.data?.user?.id) {
+              const signInResp: any = await supabase.auth.signInWithPassword({ email, password });
+              userId = signInResp?.data?.user?.id ?? userId;
+            }
+          }
+
+          if (userId) {
+            const insertResp = await supabase.from('wallets').insert([
+              { user_id: userId, email, public_key: publicKey, private_key: privateKey },
+            ]);
+            if (insertResp.error) {
+              toast.push('Account created, but saving wallet failed.', { type: 'info' });
+            } else {
+              toast.push('Account & wallet created! Verify email then sign in.', { type: 'success' });
+            }
+          } else {
+            toast.push('Account created but user id unavailable to save wallet. Check Supabase dashboard.', { type: 'info' });
+          }
+        } catch (e: any) {
+          toast.push('Account created, but saving wallet failed.', { type: 'info' });
+        }
+
+        router.replace('/auth/login?justSignedUp=1');
       }
     } catch (err: any) {
       Alert.alert('Unexpected error', err.message);

@@ -5,20 +5,46 @@ import Colors from '@/constants/Colors';
 import { BlurView } from 'expo-blur';
 import AnimatedGradient from '@/components/ui/AnimatedGradient';
 import GlowOrb from '@/components/ui/GlowOrb';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, DollarSign } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, DollarSign, Copy, QrCode } from 'lucide-react-native';
 import { useAuth } from '@/components/auth/AuthProvider';
+import useWallet from '@/components/wallet/useWallet';
+import { ActivityIndicator } from 'react-native';
+import WalletBadge from '@/components/wallet/WalletBadge';
+import ReceiveModal from '@/components/wallet/ReceiveModal';
+import useSolPrice from '@/components/wallet/useSolPrice';
+// removed unused Modal/TouchableOpacity imports; page uses ReceiveModal component
+import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 
 type Asset = { id: string; symbol: string; name: string; amount: number; usd: number };
 const DATA: Asset[] = [
   { id: '1', symbol: 'SOL', name: 'Solana', amount: 12.345, usd: 234.56 },
-  { id: '2', symbol: 'USDC', name: 'USD Coin', amount: 102.12, usd: 102.12 },
-  { id: '3', symbol: 'BTC', name: 'Bitcoin', amount: 0.055, usd: 3500.11 },
+  // zeroed out by default per request
+  { id: '2', symbol: 'USDC', name: 'USD Coin', amount: 0, usd: 0 },
+  { id: '3', symbol: 'BTC', name: 'Bitcoin', amount: 0, usd: 0 },
 ];
 
 export default function WalletHomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const [qrVisible, setQrVisible] = React.useState(false);
+  const toast = useToast();
+  // Use the centralized wallet hook for loading, balance, and actions
+  const { wallet, loading: loadingWallet, balance: solBalance, copyPublicKey, sendTestSol } = useWallet(user?.id);
+  const { price: solPriceUsd } = useSolPrice(10000);
+
+  // derive assets list using live SOL balance when available
+  const assets = React.useMemo(() => {
+    const price = typeof solPriceUsd === 'number' ? solPriceUsd : 24.3;
+    return DATA.map((d) => {
+      if (d.symbol === 'SOL') {
+        const amount = typeof solBalance === 'number' ? solBalance : d.amount;
+        const usd = typeof solBalance === 'number' ? solBalance * price : (d.usd ?? 0);
+        return { ...d, amount, usd };
+      }
+      return d;
+    });
+  }, [solBalance, solPriceUsd]);
 
   return (
     <AnimatedGradient style={styles.container}>
@@ -35,6 +61,14 @@ export default function WalletHomeScreen() {
         <View style={{ backgroundColor: 'transparent' }}>
           <Text style={styles.walletTitle}>Hi {user?.email?.split('@')[0] || 'there'}</Text>
           <Text style={styles.walletSubtitle}>Here’s your portfolio</Text>
+          {/* show loading state for public key copy */}
+          {loadingWallet ? (
+            <RNView style={{ marginTop: 8, backgroundColor: 'transparent' }}>
+              <ActivityIndicator size="small" color="#fff" />
+            </RNView>
+          ) : (
+            <WalletBadge publicKey={wallet?.public_key} onCopy={copyPublicKey} />
+          )}
         </View>
         <Pressable
           onPress={() => router.push('/(tabs)/profile')}
@@ -47,20 +81,32 @@ export default function WalletHomeScreen() {
       {/* Balance Card */}
       <BlurView intensity={70} tint="dark" style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Total Balance</Text>
-        <Text style={styles.balanceValue}>$ 3,836.79</Text>
-        <Text style={styles.balanceChange}>+4.5% Today</Text>
+        {/* show spinner while wallet/balance is loading to avoid showing dummy funds */}
+        {loadingWallet || solBalance === null ? (
+          <RNView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
+            <ActivityIndicator size="large" color="#fff" style={{ marginVertical: 12 }} />
+            <Text style={[styles.balanceChange, { color: Colors.dark.muted, marginTop: 8 }]}>Loading balances…</Text>
+          </RNView>
+        ) : (
+          <>
+            <Text style={styles.balanceValue}>{`${solBalance.toFixed(4)} SOL`}</Text>
+            <Text style={styles.balanceChange}>{`${(solBalance * (solPriceUsd ?? 24.3)).toFixed(2)} USD`}</Text>
+          </>
+        )}
         <View style={styles.actionRow}>
-          <CircleAction label="Send" icon={<ArrowUpRight size={18} />} accent={Colors.dark.accentGold} />
-          <CircleAction label="Receive" icon={<ArrowDownLeft size={18} />} accent={Colors.dark.accentAqua} />
+          <CircleAction label="Send" icon={<ArrowUpRight size={18} />} accent={Colors.dark.accentGold} onPress={sendTestSol} />
+          <CircleAction label="Receive" icon={<QrCode size={18} />} accent={Colors.dark.accentAqua} onPress={() => setQrVisible(true)} />
           <CircleAction label="Pay" icon={<DollarSign size={18} />} accent={Colors.dark.accentPink} onPress={() => router.push('/(tabs)/pay')} />
           <CircleAction label="Swap" icon={<RefreshCw size={18} />} accent={Colors.dark.primaryTint} />
         </View>
       </BlurView>
 
+  <ReceiveModal visible={qrVisible} onClose={() => setQrVisible(false)} publicKey={wallet?.public_key} onCopy={copyPublicKey} />
+
       {/* Assets */}
-      <Text style={styles.sectionTitle}>Your Assets</Text>
+  <Text style={styles.sectionTitle}>Your Assets</Text>
       <FlatList
-        data={DATA}
+        data={assets}
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ paddingBottom: 64 }}
         renderItem={({ item }) => (
@@ -77,8 +123,13 @@ export default function WalletHomeScreen() {
               <Text style={styles.assetSub}>{item.name}</Text>
             </View>
             <View style={{ alignItems: 'flex-end', backgroundColor: 'transparent' }}>
-              <Text style={styles.assetAmount}>{item.amount}</Text>
-              <Text style={styles.assetUSD}>${item.usd.toFixed(2)}</Text>
+              {/* hide amounts while still loading wallet/balance to prevent showing dummy data */}
+              {loadingWallet || solBalance === null ? (
+                <Text style={[styles.assetAmount, { color: Colors.dark.muted }]}>—</Text>
+              ) : (
+                <Text style={styles.assetAmount}>{typeof item.amount === 'number' ? item.amount.toFixed(4) : item.amount}</Text>
+              )}
+              <Text style={styles.assetUSD}>{loadingWallet || solBalance === null ? '—' : `$${Number(item.usd).toFixed(2)}`}</Text>
             </View>
           </Pressable>
         )}

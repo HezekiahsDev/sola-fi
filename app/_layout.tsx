@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';

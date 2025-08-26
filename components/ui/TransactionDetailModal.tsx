@@ -21,9 +21,8 @@ type Props = {
 };
 
 export default function TransactionDetailModal({ visible, transaction, onClose }: Props) {
-  if (!transaction) {
-    return null;
-  }
+  // Always render the Modal when visible is true so the backdrop and animations
+  // are visible even if transaction data is not yet available.
 
   const getStatusColor = (status: Transaction['status']) => {
     switch (status) {
@@ -40,44 +39,50 @@ export default function TransactionDetailModal({ visible, transaction, onClose }
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
-      <BlurView intensity={20} tint="dark" style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      {/* Use the same overlay pattern as ConfirmModal to ensure consistent touch handling */}
+      <Pressable style={styles.overlay} onPress={onClose}>
         <View style={styles.card}>
           <Text style={styles.title}>Transaction Details</Text>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.label}>Reference ID</Text>
-            <Text style={styles.value}>{transaction.id}</Text>
-          </View>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.label}>Type</Text>
-            <Text style={[styles.value, { textTransform: 'capitalize' }]}>{transaction.type}</Text>
-          </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.label}>Description</Text>
-            <Text style={styles.value}>{transaction.title}</Text>
-          </View>
+          {transaction ? (
+            <>
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Reference ID</Text>
+                <Text style={styles.value}>{transaction.id}</Text>
+              </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.label}>Date</Text>
-            <Text style={styles.value}>{transaction.date}</Text>
-          </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Type</Text>
+                <Text style={[styles.value, { textTransform: 'capitalize' }]}>{transaction.type}</Text>
+              </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.label}>Amount</Text>
-            <Text style={styles.value}>{transaction.amount}</Text>
-          </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Description</Text>
+                <Text style={styles.value}>{transaction.title}</Text>
+              </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.label}>Status</Text>
-            <Text style={[styles.value, { color: getStatusColor(transaction.status) }]}>{transaction.status}</Text>
-          </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Date</Text>
+                <Text style={styles.value}>{transaction.date}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Amount</Text>
+                <Text style={styles.value}>{transaction.amount}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Status</Text>
+                <Text style={[styles.value, { color: getStatusColor(transaction.status) }]}>{transaction.status}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={[styles.message, { textAlign: 'center', marginVertical: 16 }]}>Loading transaction details…</Text>
+          )}
 
           <PrimaryButton title="Close" onPress={onClose} style={{ marginTop: 20 }} />
         </View>
-      </BlurView>
+      </Pressable>
     </Modal>
   );
 }
@@ -104,6 +109,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  message: {
+    color: Colors.dark.muted,
+    fontSize: 14,
+    marginBottom: 8,
+    lineHeight: 20,
   },
   detailRow: {
     flexDirection: 'row',
