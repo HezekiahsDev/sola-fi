@@ -74,7 +74,7 @@ export default function SignupScreen() {
       <RNView style={styles.formCard}>
         <InputField
           label="Email"
-          placeholder="you@domain.com"
+          placeholder="please enter your email"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}

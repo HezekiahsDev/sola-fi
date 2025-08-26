@@ -24,6 +24,27 @@ const getConfig = () => {
 
 const { url, key } = getConfig();
 
+// Optional secure storage (if expo-secure-store installed). Falls back to memory map.
+let memoryStore: Record<string,string> = {};
+let SecureStoreAdapter: any = {
+  getItem: async (k: string) => memoryStore[k] ?? null,
+  setItem: async (k: string, v: string) => { memoryStore[k] = v; },
+  removeItem: async (k: string) => { delete memoryStore[k]; },
+};
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const SecureStore = require('expo-secure-store');
+  if (SecureStore?.getItemAsync) {
+    SecureStoreAdapter = {
+      getItem: (k: string) => SecureStore.getItemAsync(k),
+      setItem: (k: string, v: string) => SecureStore.setItemAsync(k, v),
+      removeItem: (k: string) => SecureStore.deleteItemAsync(k),
+    };
+  }
+} catch {
+  // module not installed; memory fallback active
+}
+
 if (!url || !key) {
   console.warn('[supabase] Missing config. Set SUPABASE_URL & SUPABASE_ANON_KEY (or EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY). Auth calls will return stub errors.');
 }
@@ -41,4 +62,11 @@ function makeMissingStub(message: string) {
   } as any;
 }
 
-export const supabase = url && key ? createClient(url, key) : makeMissingStub('Supabase not configured: set SUPABASE_URL & SUPABASE_ANON_KEY (or EXPO_PUBLIC_ variants)');
+export const supabase = url && key ? createClient(url, key, {
+  auth: {
+    storage: SecureStoreAdapter as any,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false, // not needed for native
+  },
+}) : makeMissingStub('Supabase not configured: set SUPABASE_URL & SUPABASE_ANON_KEY (or EXPO_PUBLIC_ variants)');

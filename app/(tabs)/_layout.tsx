@@ -1,67 +1,113 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
-
+import { Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import { Platform, StyleSheet, View, Pressable, Text, Dimensions } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+const { width } = Dimensions.get('window');
+
+function GlassTabBar({ state, descriptors, navigation }: any) {
+  const activeTint = '#a855f7'; // neon purple accent
+  const tabWidth = width / state.routes.length;
+  const translateX = useSharedValue(state.index * tabWidth);
+
+  React.useEffect(() => {
+    translateX.value = withTiming(state.index * tabWidth, { duration: 250 });
+  }, [state.index]);
+
+  return (
+    <BlurView intensity={40} tint="dark" style={styles.barContainer}>
+      {/* Active indicator pill */}
+    
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key];
+        const label =
+          options.tabBarLabel !== undefined
+            ? options.tabBarLabel
+            : options.title !== undefined
+            ? options.title
+            : route.name;
+        const isFocused = state.index === index;
+
+        const iconMap: Record<string, keyof typeof Feather.glyphMap> = {
+          index: 'credit-card',
+          pay: 'dollar-sign',
+          transactions: 'activity',
+          profile: 'user',
+        };
+        const iconName = iconMap[route.name] || 'circle';
+
+        const onPress = () => {
+          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <Pressable
+            key={route.key}
+            onPress={onPress}
+            style={styles.tabItem}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+          >
+            <Feather
+              name={iconName}
+              size={24}
+              color={isFocused ? activeTint : Colors.dark.muted}
+              style={{ marginBottom: 2 }}
+            />
+            <Text style={[styles.tabLabel, { color: isFocused ? activeTint : Colors.dark.muted }]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </BlurView>
+  );
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="credit-card" color={color} />,
-          headerTitle: 'Wallet',
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={22}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 16, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Activity',
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
-        }}
-      />
+    <Tabs tabBar={(props) => <GlassTabBar {...props} />} screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="index" options={{ title: 'Wallet' }} />
+      <Tabs.Screen name="pay" options={{ title: 'Pay' }} />
+      <Tabs.Screen name="transactions" options={{ title: 'Txs' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  barContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(20,20,24,0.85)',
+    overflow: 'hidden',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    top: 6,
+    left: 20,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.4)',
+  },
+  tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
+  tabLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginTop: 2 },
+});

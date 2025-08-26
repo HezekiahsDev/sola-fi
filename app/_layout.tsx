@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ToastProvider } from '@/components/ui/Toast';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -55,8 +56,9 @@ function RootLayoutNav() {
   return (
     <>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <ToastProvider>
-        <Stack>
+  <ToastProvider>
+  <AuthProvider>
+  <Stack>
   <Stack.Screen name="landing" options={{ headerShown: false }} />
   <Stack.Screen name="auth/login" options={{ title: 'Login', headerShown: false }} />
   <Stack.Screen name="auth/signup" options={{ title: 'Sign up', headerShown: false }} />
@@ -66,6 +68,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
   </Stack>
+  </AuthProvider>
   </ToastProvider>
       </ThemeProvider>
 

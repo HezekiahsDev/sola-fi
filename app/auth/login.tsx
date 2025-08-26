@@ -4,6 +4,8 @@ import { View, Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/components/ui/Toast';
 import AnimatedGradient from '@/components/ui/AnimatedGradient';
 import InputField from '@/components/ui/InputField';
 
@@ -14,18 +16,23 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
+  const { signIn, loading: authLoading } = useAuth();
+  const toast = useToast();
+
   async function handleLogin() {
+    if (!email || !password) return;
     setLoading(true);
     setErrorMsg(null);
-    const { data, error } = await (await import('@/lib/supabase')).supabase.auth.signInWithPassword({ email, password });
+    const { error } = await signIn(email.trim(), password);
     setLoading(false);
-    if (error) { 
-      setErrorMsg(error.message);
-      // Announce error for screen readers
-      try { AccessibilityInfo.announceForAccessibility(error.message); } catch {}
-      return; 
+    if (error) {
+      setErrorMsg(error);
+      try { AccessibilityInfo.announceForAccessibility(error); } catch {}
+      toast.push(error, { type: 'error' });
+      return;
     }
-    router.replace('/(tabs)');
+    toast.push('Signed in successfully', { type: 'success' });
+    // AuthProvider route guard will redirect to /(tabs)
   }
   const router = useRouter();
   const search = useLocalSearchParams();
@@ -63,7 +70,7 @@ export default function LoginScreen() {
               <PrimaryButton
                 title={loading ? '' : 'Unlock'}
                 loading={loading}
-                disabled={!email || !password || loading}
+                disabled={!email || !password || loading || authLoading}
                 onPress={handleLogin}
                 style={{ marginTop: 4 }}
               >
