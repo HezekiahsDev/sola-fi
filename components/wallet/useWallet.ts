@@ -63,24 +63,37 @@ export default function useWallet(userId?: string | null) {
     }
   };
 
-  const sendTestSol = async () => {
-    if (!wallet?.private_key) { toast.push('No private key available to sign the transaction.', { type: 'error' }); return; }
+
+  // Generic send function: send arbitrary SOL to a recipient pubkey string
+  const sendSol = async (recipientStr: string, amountSol: number) => {
+    if (!wallet?.private_key) {
+      toast.push('No private key available to sign the transaction.', { type: 'error' });
+      return;
+    }
     try {
       const secret = Uint8Array.from(wallet.private_key);
       const kp = Keypair.fromSecretKey(secret);
       const conn = new Connection(clusterApiUrl('devnet'), 'confirmed');
-      const recipient = new PublicKey('5gqV1h6xg8mL5apqk5y1g1Vf2n4yZbQh5hX3YQinw7zK');
-      const lamports = Math.round(0.001 * LAMPORTS_PER_SOL);
+      const recipient = new PublicKey(recipientStr);
+      const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
       const txIx = SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: recipient, lamports });
-      // build and send transaction
-      const { default: web3 } = await import('@solana/web3.js');
-      const tx = new web3.Transaction().add(txIx as any);
+      const tx = new (await import('@solana/web3.js')).Transaction().add(txIx as any);
       const sig = await conn.sendTransaction(tx, [kp]);
-      toast.push(`Transaction sent: ${sig}`, { type: 'success' });
+      
+      toast.push(`Transaction sent: ${sig.slice(0, 10)}...`, { type: 'info' });
+      
+      const confirmation = await conn.confirmTransaction(sig, 'confirmed');
+      if (confirmation.value.err) {
+        throw new Error(`Transaction confirmation failed: ${confirmation.value.err}`);
+      }
+
+      toast.push(`Transaction confirmed!`, { type: 'success' });
+      return { signature: sig, confirmation };
     } catch (e: any) {
       toast.push(`Send failed: ${e?.message ?? String(e)}`, { type: 'error' });
+      throw e;
     }
   };
 
-  return { wallet, loading, balance, reload: load, copyPublicKey, sendTestSol };
+  return { wallet, loading, balance, reload: load, copyPublicKey, sendSol };
 }

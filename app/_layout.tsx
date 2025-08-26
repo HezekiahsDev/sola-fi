@@ -67,7 +67,9 @@ function RootLayoutNav() {
   <Stack.Screen name="auth/seed" options={{ title: 'Recovery Phrase', headerShown: false }} />
   <Stack.Screen name="auth/recover" options={{ title: 'Recover Wallet', headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+                  {/* Register send as a root modal so it never appears in the tab bar */}
+                  <Stack.Screen name="send" options={{ presentation: 'modal', headerShown: false }} />
   </Stack>
   </AuthProvider>
   </ToastProvider>

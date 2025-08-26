@@ -1,58 +1,12 @@
-import React, { useState } from 'react';
-import { StyleSheet, Pressable, StatusBar, View as RNView, ScrollView } from 'react-native';
+import React from 'react';
+import { StyleSheet, StatusBar, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import AnimatedGradient from '@/components/ui/AnimatedGradient';
 import GlowOrb from '@/components/ui/GlowOrb';
 import Colors from '@/constants/Colors';
-import { BlurView } from 'expo-blur';
-import { ArrowUpRight, ArrowDownLeft } from 'lucide-react-native'; // Icons for sent/received
-import TransactionDetailModal from '@/components/ui/TransactionDetailModal';
-
-type Transaction = {
-  id: string;
-  type: 'sent' | 'received';
-  title: string;
-  date: string;
-  amount: string;
-  status: 'Completed' | 'Pending' | 'Failed';
-};
+import { Clock } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-
-  const transactions: Transaction[] = [
-    { id: '1', type: 'sent', title: 'Sent to @john.sola', date: '2024-07-22', amount: '$50.00', status: 'Completed' },
-    { id: '2', type: 'received', title: 'Received from @jane.sola', date: '2024-07-21', amount: '$120.00', status: 'Completed' },
-    { id: '3', type: 'sent', title: 'Data Purchase', date: '2024-07-20', amount: '$10.00', status: 'Completed' },
-    { id: '4', type: 'sent', title: 'Airtime Top-up', date: '2024-07-20', amount: '$5.00', status: 'Pending' },
-    { id: '5', type: 'received', title: 'From @mom.sola', date: '2024-07-19', amount: '$200.00', status: 'Completed' },
-    { id: '6', type: 'sent', title: 'Electricity Bill', date: '2024-07-18', amount: '$75.50', status: 'Failed' },
-  ];
-
-  const handleTransactionPress = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setModalVisible(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalVisible(false);
-    setSelectedTransaction(null);
-  };
-
-  const getStatusColor = (status: Transaction['status']) => {
-    switch (status) {
-      case 'Completed':
-        return '#4ade80'; // green-400
-      case 'Pending':
-        return '#facc15'; // yellow-400
-      case 'Failed':
-        return '#f87171'; // red-400
-      default:
-        return Colors.dark.muted;
-    }
-  };
-
   return (
     <AnimatedGradient style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
@@ -65,101 +19,67 @@ export default function TransactionsScreen() {
         <Text style={styles.title}>Transaction History</Text>
         <Text style={styles.helper}>A log of all your recent transactions.</Text>
 
-        <ScrollView contentContainerStyle={styles.verticalList} showsVerticalScrollIndicator={false}>
-          {transactions.map((tx) => (
-            <BlurView key={tx.id} intensity={10} tint="dark" style={styles.glassWrapper}>
-              <Pressable
-                style={({ pressed }) => [styles.glassBtn, pressed && styles.glassBtnPressed]}
-                onPress={() => handleTransactionPress(tx)}
-                accessibilityLabel={`Transaction: ${tx.title}`}
-              >
-                <View style={[styles.iconWrapper, { backgroundColor: tx.type === 'sent' ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)' }]}>
-                  {tx.type === 'sent' ? <ArrowUpRight color="#f87171" size={20} /> : <ArrowDownLeft color="#4ade80" size={20} />}
-                </View>
-                <View style={styles.txDetails}>
-                  <Text style={styles.glassTitle}>{tx.title}</Text>
-                  <Text style={styles.txDate}>{tx.date}</Text>
-                </View>
-                <View style={styles.txAmountStatus}>
-                  <Text style={styles.txAmount}>{tx.amount}</Text>
-                  <Text style={[styles.txStatus, { color: getStatusColor(tx.status) }]}>{tx.status}</Text>
-                </View>
-              </Pressable>
-            </BlurView>
-          ))}
-        </ScrollView>
+        <View style={styles.comingSoonContainer}>
+          <Clock size={48} color={Colors.dark.muted} />
+          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+          <Text style={styles.comingSoonText}>
+            We're working on bringing you a detailed transaction history. Please check back later!
+          </Text>
+        </View>
       </View>
-
-      <TransactionDetailModal
-        visible={modalVisible}
-        transaction={selectedTransaction}
-        onClose={handleCloseModal}
-      />
     </AnimatedGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  // content now renders directly in the main container for a cleaner look
-  content: { backgroundColor: 'transparent', marginTop: 36, paddingHorizontal: 6 },
-  title: { fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  helper: { fontSize: 13, color: Colors.dark.muted, lineHeight: 18, marginBottom: 14 },
-  decor: { ...StyleSheet.absoluteFillObject },
-
-  verticalList: { paddingVertical: 4 },
-  glassWrapper: {
-    borderRadius: 12,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  glassBtn: {
-    width: '100%',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.015)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    flexDirection: 'row',
-  },
-  glassBtnPressed: { transform: [{ scale: 0.997 }], opacity: 0.98 },
-  iconWrapper: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 8, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginRight: 12 
-  },
-  txDetails: {
+  content: {
+    backgroundColor: 'transparent',
+    marginTop: 36,
+    paddingHorizontal: 6,
     flex: 1,
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  glassTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  txDate: {
-    fontSize: 12,
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  helper: {
+    fontSize: 13,
     color: Colors.dark.muted,
-    marginTop: 2,
+    lineHeight: 18,
+    marginBottom: 14,
+    textAlign: 'center',
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    right: 0,
   },
-  txAmountStatus: {
-    alignItems: 'flex-end',
+  decor: { ...StyleSheet.absoluteFillObject },
+  comingSoonContainer: {
     backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
-  txAmount: {
-    fontSize: 14,
-    fontWeight: '700',
+  comingSoonTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
     color: '#fff',
+    marginTop: 16,
   },
-  txStatus: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
+  comingSoonText: {
+    fontSize: 16,
+    color: Colors.dark.muted,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 22,
   },
 });

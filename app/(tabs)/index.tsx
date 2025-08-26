@@ -14,7 +14,7 @@ import ReceiveModal from '@/components/wallet/ReceiveModal';
 import useSolPrice from '@/components/wallet/useSolPrice';
 // removed unused Modal/TouchableOpacity imports; page uses ReceiveModal component
 import { useToast } from '@/components/ui/Toast';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 type Asset = { id: string; symbol: string; name: string; amount: number; usd: number };
 const DATA: Asset[] = [
@@ -30,8 +30,14 @@ export default function WalletHomeScreen() {
   const [qrVisible, setQrVisible] = React.useState(false);
   const toast = useToast();
   // Use the centralized wallet hook for loading, balance, and actions
-  const { wallet, loading: loadingWallet, balance: solBalance, copyPublicKey, sendTestSol } = useWallet(user?.id);
+  const { wallet, loading: loadingWallet, balance: solBalance, copyPublicKey, reload } = useWallet(user?.id);
   const { price: solPriceUsd } = useSolPrice(10000);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   // derive assets list using live SOL balance when available
   const assets = React.useMemo(() => {
@@ -94,7 +100,7 @@ export default function WalletHomeScreen() {
           </>
         )}
         <View style={styles.actionRow}>
-          <CircleAction label="Send" icon={<ArrowUpRight size={18} />} accent={Colors.dark.accentGold} onPress={sendTestSol} />
+          <CircleAction label="Send" icon={<ArrowUpRight size={18} />} accent={Colors.dark.accentGold} onPress={() => router.push('/send')} />
           <CircleAction label="Receive" icon={<QrCode size={18} />} accent={Colors.dark.accentAqua} onPress={() => setQrVisible(true)} />
           <CircleAction label="Pay" icon={<DollarSign size={18} />} accent={Colors.dark.accentPink} onPress={() => router.push('/(tabs)/pay')} />
           <CircleAction label="Swap" icon={<RefreshCw size={18} />} accent={Colors.dark.primaryTint} />

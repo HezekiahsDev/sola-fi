@@ -5,7 +5,7 @@ import AnimatedGradient from '@/components/ui/AnimatedGradient';
 import GlowOrb from '@/components/ui/GlowOrb';
 import Colors from '@/constants/Colors';
 import { BlurView } from 'expo-blur';
-import { Phone, Wifi, Zap, Tv, DollarSign, CreditCard } from 'lucide-react-native';
+import { Phone, Wifi, Zap, Tv, DollarSign, CreditCard, Rocket } from 'lucide-react-native';
 
 type PayOption = {
   key: string;
@@ -51,6 +51,14 @@ export default function PayScreen() {
           ))}
         </ScrollView>
       </View>
+
+      <BlurView intensity={20} tint="dark" style={styles.comingSoonOverlay}>
+        <Rocket size={48} color={Colors.dark.accentGold} />
+        <Text style={styles.comingSoonTitle}>Get Ready for Liftoff!</Text>
+        <Text style={styles.comingSoonText}>
+          Exciting new payment features are launching soon. Stay tuned for a seamless way to manage your finances.
+        </Text>
+      </BlurView>
     </AnimatedGradient>
   );
 }
@@ -88,4 +96,26 @@ const styles = StyleSheet.create({
   glassBtnPressed: { transform: [{ scale: 0.997 }], opacity: 0.98 },
   iconWrapper: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 10, backgroundColor: 'rgba(255,255,255,0.02)' },
   glassTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  comingSoonOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 100, // Add padding to shift content up
+  },
+  comingSoonTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  comingSoonText: {
+    fontSize: 16,
+    color: Colors.dark.muted,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 22,
+  },
 });
