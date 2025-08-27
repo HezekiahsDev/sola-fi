@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "sola-fi",
-    "slug": "sola-fi",
+    "slug": "solafi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.solafi"
     },
     "web": {
       "bundler": "metro",
@@ -36,7 +37,12 @@
     },
     "extra": {
       "EXPO_PUBLIC_SUPABASE_URL": "https://ioxvqrldpqlvnfgiapww.supabase.co",
-      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlveHZxcmxkcHFsdm5mZ2lhcHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NjE3NjksImV4cCI6MjA3MTQzNzc2OX0.sYWFkHGItdAimvXfup96LGyJrO573S0Nn5x0IbxKzvI"
-    }
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlveHZxcmxkcHFsdm5mZ2lhcHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NjE3NjksImV4cCI6MjA3MTQzNzc2OX0.sYWFkHGItdAimvXfup96LGyJrO573S0Nn5x0IbxKzvI",
+      "router": {},
+      "eas": {
+        "projectId": "d7d694f8-9bd1-4291-b58a-d9eb8341f938"
+      }
+    },
+    "owner": "hezekiahsdev"
   }
 }
