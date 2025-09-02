@@ -12,12 +12,13 @@ export default function useWallet(userId?: string | null) {
   const load = React.useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const { data, error } = await supabase.from('wallets').select('user_id, email, public_key, private_key').eq('user_id', userId).single();
+    const { data, error } = await supabase.from('wallets').select('user_id, email, public_key, private_key').eq('user_id', userId);
     if (error) {
       console.warn('Failed to load wallet', error);
       setWallet(null);
     } else {
-      setWallet(data ?? null);
+      // data is an array, take the first wallet if it exists
+      setWallet(data && data.length > 0 ? data[0] : null);
     }
     setLoading(false);
   }, [userId]);
@@ -46,52 +47,76 @@ export default function useWallet(userId?: string | null) {
   }, [wallet?.public_key]);
 
   const copyPublicKey = async () => {
-    if (!wallet?.public_key) return;
+    if (!wallet?.public_key) {
+      toast.push('No public key available to copy', { type: 'error' });
+      return;
+    }
     try {
-      const clipboard = await import('expo-clipboard');
-      // expo-clipboard exports named functions; access setStringAsync directly
-      if (typeof clipboard.setStringAsync === 'function') {
-        await clipboard.setStringAsync(wallet.public_key);
-      } else if (clipboard.default && typeof clipboard.default.setStringAsync === 'function') {
-        await clipboard.default.setStringAsync(wallet.public_key);
-      } else {
-        throw new Error('Clipboard API not available');
-      }
+      // Use the modern expo-clipboard API
+      const { setStringAsync } = await import('expo-clipboard');
+      await setStringAsync(wallet.public_key);
       toast.push('Public key copied to clipboard', { type: 'success' });
-    } catch (e) {
-      toast.push('Copy failed', { type: 'error' });
+    } catch (error) {
+      console.warn('Copy failed:', error);
+      toast.push('Failed to copy to clipboard', { type: 'error' });
     }
   };
 
 
   // Generic send function: send arbitrary SOL to a recipient pubkey string
-  const sendSol = async (recipientStr: string, amountSol: number) => {
-    if (!wallet?.private_key) {
-      toast.push('No private key available to sign the transaction.', { type: 'error' });
-      return;
+    const sendSol = async (recipient: string, amount: number) => {
+    if (!wallet || !wallet.secretKey) {
+      throw new Error('No wallet available');
     }
+    
     try {
-      const secret = Uint8Array.from(wallet.private_key);
-      const kp = Keypair.fromSecretKey(secret);
-      const conn = new Connection(clusterApiUrl('devnet'), 'confirmed');
-      const recipient = new PublicKey(recipientStr);
-      const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
-      const txIx = SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: recipient, lamports });
-      const tx = new (await import('@solana/web3.js')).Transaction().add(txIx as any);
-      const sig = await conn.sendTransaction(tx, [kp]);
+      const { Connection, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = await import('@solana/web3.js');
+      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
       
-      toast.push(`Transaction sent: ${sig.slice(0, 10)}...`, { type: 'info' });
+      const fromKeypair = wallet;
+      const toPublicKey = new PublicKey(recipient);
       
-      const confirmation = await conn.confirmTransaction(sig, 'confirmed');
-      if (confirmation.value.err) {
-        throw new Error(`Transaction confirmation failed: ${confirmation.value.err}`);
+      // Get recent blockhash
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      
+      const transaction = new Transaction({
+        blockhash,
+        lastValidBlockHeight,
+        feePayer: fromKeypair.publicKey,
+      });
+      
+      transaction.add(
+        SystemProgram.transfer({
+          fromPubkey: fromKeypair.publicKey,
+          toPubkey: toPublicKey,
+          lamports: Math.floor(amount * 1e9), // Convert SOL to lamports
+        })
+      );
+      
+      const signature = await sendAndConfirmTransaction(connection, transaction, [fromKeypair], {
+        commitment: 'confirmed',
+        preflightCommitment: 'confirmed',
+      });
+      
+      // Wait a bit for confirmation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Verify the transaction was successful
+      const txInfo = await connection.getTransaction(signature, { commitment: 'confirmed' });
+      if (!txInfo) {
+        throw new Error('Transaction not found');
       }
-
-      toast.push(`Transaction confirmed!`, { type: 'success' });
-      return { signature: sig, confirmation };
-    } catch (e: any) {
-      toast.push(`Send failed: ${e?.message ?? String(e)}`, { type: 'error' });
-      throw e;
+      
+      return signature;
+    } catch (error: any) {
+      console.error('Send SOL error:', error);
+      if (error.message?.includes('insufficient funds')) {
+        throw new Error('Insufficient funds for transaction');
+      } else if (error.message?.includes('blockhash not found')) {
+        throw new Error('Transaction expired, please try again');
+      } else {
+        throw new Error(`Transaction failed: ${error.message || 'Unknown error'}`);
+      }
     }
   };
 

@@ -46,11 +46,34 @@ export default function SendModal() {
       toast.push('Enter recipient and amount', { type: 'error' });
       return;
     }
+    
+    // Validate recipient address
+    try {
+      new (await import('@solana/web3.js')).PublicKey(recipient);
+    } catch (e) {
+      toast.push('Invalid recipient address', { type: 'error' });
+      return;
+    }
+    
     const amt = Number(amount);
     if (isNaN(amt) || amt <= 0) {
       toast.push('Enter a valid amount', { type: 'error' });
       return;
     }
+    
+    // Check if amount is greater than balance
+    if (typeof balance === 'number' && amt > balance) {
+      toast.push('Insufficient balance', { type: 'error' });
+      return;
+    }
+    
+    // Check minimum amount (considering fees)
+    const minAmount = 0.00001; // Minimum SOL amount
+    if (amt < minAmount) {
+      toast.push(`Minimum amount is ${minAmount} SOL`, { type: 'error' });
+      return;
+    }
+    
     setConfirmVisible(true);
   };
 
@@ -58,12 +81,17 @@ export default function SendModal() {
     const amt = Number(amount);
     try {
       setLoading(true);
-      await sendSol(recipient, amt);
-      toast.push('Sent successfully', { type: 'success' });
+      const signature = await sendSol(recipient, amt);
+      toast.push(`Transaction successful! ${signature.slice(0, 8)}...`, { type: 'success' });
       setConfirmVisible(false);
+      setRecipient('');
+      setAmount('');
+      // Refresh balance
+      await loadWallet();
       router.back();
-    } catch (e) {
-      // sendSol already shows toast; keep UI state
+    } catch (e: any) {
+      console.error('Send error:', e);
+      toast.push(e.message || 'Failed to send transaction', { type: 'error' });
       setConfirmVisible(false);
     } finally {
       setLoading(false);

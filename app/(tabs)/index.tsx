@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, FlatList, Pressable, View as RNView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, FlatList, Pressable, View as RNView, StatusBar, RefreshControl } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { BlurView } from 'expo-blur';
@@ -16,13 +16,13 @@ import useSolPrice from '@/components/wallet/useSolPrice';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter, useFocusEffect } from 'expo-router';
 
-type Asset = { id: string; symbol: string; name: string; amount: number; usd: number };
-const DATA: Asset[] = [
-  { id: '1', symbol: 'SOL', name: 'Solana', amount: 12.345, usd: 234.56 },
-  // zeroed out by default per request
-  { id: '2', symbol: 'USDC', name: 'USD Coin', amount: 0, usd: 0 },
-  { id: '3', symbol: 'BTC', name: 'Bitcoin', amount: 0, usd: 0 },
-];
+type Asset = { id: string; symbol: string; name: string; amount: number; usd: number; price?: number };
+
+const COINGECKO_IDS = {
+  SOL: 'solana',
+  USDC: 'usd-coin',
+  BTC: 'bitcoin',
+};
 
 export default function WalletHomeScreen() {
   const { user } = useAuth();
@@ -33,6 +33,49 @@ export default function WalletHomeScreen() {
   const { wallet, loading: loadingWallet, balance: solBalance, copyPublicKey, reload } = useWallet(user?.id);
   const { price: solPriceUsd } = useSolPrice(10000);
 
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loadingPrices, setLoadingPrices] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPrices = async () => {
+    try {
+      const ids = Object.values(COINGECKO_IDS).join(',');
+      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+      if (!response.ok) throw new Error('Failed to fetch prices');
+      const data = await response.json();
+      
+      const updatedAssets: Asset[] = [
+        { id: '1', symbol: 'SOL', name: 'Solana', amount: typeof solBalance === 'number' ? solBalance : 0, price: data.solana?.usd || solPriceUsd || 0 },
+        { id: '2', symbol: 'USDC', name: 'USD Coin', amount: 0, price: data['usd-coin']?.usd || 1 },
+        { id: '3', symbol: 'BTC', name: 'Bitcoin', amount: 0, price: data.bitcoin?.usd || 0 },
+      ].map(asset => ({
+        ...asset,
+        usd: asset.amount * (asset.price || 0),
+      }));
+      
+      setAssets(updatedAssets);
+      setError(null);
+    } catch (err) {
+      setError('Unable to fetch live prices.');
+      setAssets([
+        { id: '1', symbol: 'SOL', name: 'Solana', amount: typeof solBalance === 'number' ? solBalance : 0, usd: (typeof solBalance === 'number' ? solBalance : 0) * (solPriceUsd || 0) },
+        { id: '2', symbol: 'USDC', name: 'USD Coin', amount: 0, usd: 0 },
+        { id: '3', symbol: 'BTC', name: 'Bitcoin', amount: 0, usd: 0 },
+      ]);
+    }
+  };
+
+  useEffect(() => {
+    fetchPrices().finally(() => setLoadingPrices(false));
+  }, [solBalance, solPriceUsd]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPrices();
+    setRefreshing(false);
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       reload();
@@ -40,17 +83,17 @@ export default function WalletHomeScreen() {
   );
 
   // derive assets list using live SOL balance when available
-  const assets = React.useMemo(() => {
-    const price = typeof solPriceUsd === 'number' ? solPriceUsd : 24.3;
-    return DATA.map((d) => {
-      if (d.symbol === 'SOL') {
-        const amount = typeof solBalance === 'number' ? solBalance : d.amount;
-        const usd = typeof solBalance === 'number' ? solBalance * price : (d.usd ?? 0);
-        return { ...d, amount, usd };
-      }
-      return d;
-    });
-  }, [solBalance, solPriceUsd]);
+  const displayAssets = React.useMemo(() => {
+    return assets;
+  }, [assets]);
+
+  if (loadingPrices && assets.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading prices...</Text>
+      </View>
+    );
+  }
 
   return (
     <AnimatedGradient style={styles.container}>
@@ -87,8 +130,18 @@ export default function WalletHomeScreen() {
       {/* Balance Card */}
       <BlurView intensity={70} tint="dark" style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Total Balance</Text>
-        {/* show spinner while wallet/balance is loading to avoid showing dummy funds */}
-        {loadingWallet || solBalance === null ? (
+        {/* show spinner while wallet/balance is loading, or show no wallet message */}
+        {loadingWallet ? (
+          <RNView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
+            <ActivityIndicator size="large" color="#fff" style={{ marginVertical: 12 }} />
+            <Text style={[styles.balanceChange, { color: Colors.dark.muted, marginTop: 8 }]}>Loading wallet…</Text>
+          </RNView>
+        ) : !wallet ? (
+          <RNView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
+            <Text style={styles.balanceValue}>No Wallet</Text>
+            <Text style={[styles.balanceChange, { color: Colors.dark.muted, marginTop: 8 }]}>Create or import a wallet to get started</Text>
+          </RNView>
+        ) : solBalance === null ? (
           <RNView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
             <ActivityIndicator size="large" color="#fff" style={{ marginVertical: 12 }} />
             <Text style={[styles.balanceChange, { color: Colors.dark.muted, marginTop: 8 }]}>Loading balances…</Text>
@@ -100,10 +153,10 @@ export default function WalletHomeScreen() {
           </>
         )}
         <View style={styles.actionRow}>
-          <CircleAction label="Send" icon={<ArrowUpRight size={18} />} accent={Colors.dark.accentGold} onPress={() => router.push('/send')} />
-          <CircleAction label="Receive" icon={<QrCode size={18} />} accent={Colors.dark.accentAqua} onPress={() => setQrVisible(true)} />
-          <CircleAction label="Pay" icon={<DollarSign size={18} />} accent={Colors.dark.accentPink} onPress={() => router.push('/(tabs)/pay')} />
-          <CircleAction label="Swap" icon={<RefreshCw size={18} />} accent={Colors.dark.primaryTint} />
+          <CircleAction label="Send" icon={<ArrowUpRight size={18} />} accent={Colors.dark.accentGold} onPress={() => router.push('/send')} disabled={!wallet} />
+          <CircleAction label="Receive" icon={<QrCode size={18} />} accent={Colors.dark.accentAqua} onPress={() => setQrVisible(true)} disabled={!wallet} />
+          <CircleAction label="Pay" icon={<DollarSign size={18} />} accent={Colors.dark.accentPink} onPress={() => router.push('/(tabs)/pay')} disabled={!wallet} />
+          <CircleAction label="Swap" icon={<RefreshCw size={18} />} accent={Colors.dark.primaryTint} disabled={!wallet} />
         </View>
       </BlurView>
 
@@ -112,9 +165,12 @@ export default function WalletHomeScreen() {
       {/* Assets */}
   <Text style={styles.sectionTitle}>Your Assets</Text>
       <FlatList
-        data={assets}
+        data={displayAssets}
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ paddingBottom: 64 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
+        }
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
@@ -129,13 +185,13 @@ export default function WalletHomeScreen() {
               <Text style={styles.assetSub}>{item.name}</Text>
             </View>
             <View style={{ alignItems: 'flex-end', backgroundColor: 'transparent' }}>
-              {/* hide amounts while still loading wallet/balance to prevent showing dummy data */}
-              {loadingWallet || solBalance === null ? (
+              {/* hide amounts when no wallet or still loading */}
+              {!wallet || loadingWallet || solBalance === null ? (
                 <Text style={[styles.assetAmount, { color: Colors.dark.muted }]}>—</Text>
               ) : (
                 <Text style={styles.assetAmount}>{typeof item.amount === 'number' ? item.amount.toFixed(4) : item.amount}</Text>
               )}
-              <Text style={styles.assetUSD}>{loadingWallet || solBalance === null ? '—' : `$${Number(item.usd).toFixed(2)}`}</Text>
+              <Text style={styles.assetUSD}>{!wallet || loadingWallet || solBalance === null ? '—' : `$${Number(item.usd).toFixed(2)}`}</Text>
             </View>
           </Pressable>
         )}
@@ -155,7 +211,7 @@ function hexToRgba(hex: string, alpha = 0.25) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function CircleAction({ label, icon, accent, onPress }: { label: string; icon: React.ReactElement; accent?: string; onPress?: () => void }) {
+function CircleAction({ label, icon, accent, onPress, disabled }: { label: string; icon: React.ReactElement; accent?: string; onPress?: () => void; disabled?: boolean }) {
   const renderedIcon = accent ? React.cloneElement(icon as any, { color: '#fff' }) : icon;
   // Use subtle accent for border/background
   const borderColor = accent ? hexToRgba(accent, 0.18) : 'rgba(255,255,255,0.12)';
@@ -164,11 +220,12 @@ function CircleAction({ label, icon, accent, onPress }: { label: string; icon: R
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
       style={({ pressed }) => [
         styles.circleBtn,
         { borderColor, backgroundColor: bgColor },
-        pressed && { transform: [{ scale: 0.95 }], shadowOpacity: 0.6 },
+        disabled && { opacity: 0.4 },
+        pressed && !disabled && { transform: [{ scale: 0.95 }], shadowOpacity: 0.6 },
       ]}
     >
       {renderedIcon}
