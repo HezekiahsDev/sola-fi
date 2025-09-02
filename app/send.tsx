@@ -18,7 +18,7 @@ export default function SendModal() {
   const router = useRouter();
   const toast = useToast();
   const { user } = useAuth();
-  const { wallet, sendSol, balance } = useWallet(user?.id);
+  const { wallet, sendSol, balance, reload } = useWallet(user?.id);
   const [recipient, setRecipient] = React.useState('');
   const [amount, setAmount] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -87,7 +87,7 @@ export default function SendModal() {
       setRecipient('');
       setAmount('');
       // Refresh balance
-      await loadWallet();
+      await reload();
       router.back();
     } catch (e: any) {
       console.error('Send error:', e);
