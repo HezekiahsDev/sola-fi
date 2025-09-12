@@ -76,7 +76,7 @@ export default function ConfirmModal({ visible, title = 'Are you sure?', message
             <Pressable style={styles.cancel} onPress={onCancel} accessibilityRole="button">
               <Text style={styles.cancelText}>{cancelLabel}</Text>
             </Pressable>
-            <PrimaryButton title={loading ? `${confirmLabel}` : confirmLabel} onPress={onConfirm} variant="pink" style={{ minWidth: 120 }} />
+            <PrimaryButton title={confirmLabel} loading={!!loading} onPress={onConfirm} variant="pink" style={{ minWidth: 120 }} />
           </View>
         </Animated.View>
       </Pressable>

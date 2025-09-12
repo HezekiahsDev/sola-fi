@@ -1,6 +1,9 @@
 import React from 'react';
 import { supabase } from '@/lib/supabase';
-import { Connection, clusterApiUrl, Keypair, PublicKey, LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js';
+// NOTE: do not import '@solana/web3.js' at top-level — it requires
+// crypto.getRandomValues during module evaluation in some environments.
+// We dynamically import web3 inside functions after the crypto polyfill
+// (react-native-get-random-values) is loaded at app entry.
 import { useToast } from '@/components/ui/Toast';
 
 export default function useWallet(userId?: string | null) {
@@ -18,7 +21,15 @@ export default function useWallet(userId?: string | null) {
       setWallet(null);
     } else {
       // data is an array, take the first wallet if it exists
-      setWallet(data && data.length > 0 ? data[0] : null);
+      const row = data && data.length > 0 ? data[0] : null;
+      if (row && row.private_key && typeof row.private_key === 'string') {
+        try {
+          row.private_key = JSON.parse(row.private_key);
+        } catch {
+          // leave as-is; downstream will validate
+        }
+      }
+      setWallet(row);
     }
     setLoading(false);
   }, [userId]);
@@ -29,9 +40,16 @@ export default function useWallet(userId?: string | null) {
   React.useEffect(() => {
     if (!wallet?.public_key) { setBalance(null); return; }
     let mounted = true;
-    const conn = new Connection(clusterApiUrl('devnet'));
+    let id: any;
     const fetchBalance = async () => {
       try {
+        const web3 = await import('@solana/web3.js');
+        const Connection = web3.Connection ?? web3.default?.Connection;
+        const clusterApiUrl = web3.clusterApiUrl ?? web3.default?.clusterApiUrl;
+        const PublicKey = web3.PublicKey ?? web3.default?.PublicKey;
+        const LAMPORTS_PER_SOL = web3.LAMPORTS_PER_SOL ?? web3.default?.LAMPORTS_PER_SOL ?? 1000000000;
+        if (!Connection || !clusterApiUrl || !PublicKey) throw new Error('Missing web3 utilities');
+        const conn = new Connection(clusterApiUrl('devnet'));
         const bal = await conn.getBalance(new PublicKey(wallet.public_key), 'confirmed');
         if (!mounted) return;
         setBalance(bal / LAMPORTS_PER_SOL);
@@ -42,7 +60,7 @@ export default function useWallet(userId?: string | null) {
       }
     };
     fetchBalance();
-    const id = setInterval(fetchBalance, 15000);
+    id = setInterval(fetchBalance, 15000);
     return () => { mounted = false; clearInterval(id); };
   }, [wallet?.public_key]);
 
@@ -63,60 +81,60 @@ export default function useWallet(userId?: string | null) {
   };
 
 
-  // Generic send function: send arbitrary SOL to a recipient pubkey string
-    const sendSol = async (recipient: string, amount: number) => {
-    if (!wallet || !wallet.secretKey) {
+  // Generic send function: send SOL to a recipient pubkey string
+  const sendSol = async (recipient: string, amount: number) => {
+    if (!wallet?.public_key || !wallet?.private_key) {
       throw new Error('No wallet available');
     }
-    
     try {
-      const { Connection, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = await import('@solana/web3.js');
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
-      
-      const fromKeypair = wallet;
-      const toPublicKey = new PublicKey(recipient);
-      
-      // Get recent blockhash
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-      
-      const transaction = new Transaction({
-        blockhash,
-        lastValidBlockHeight,
-        feePayer: fromKeypair.publicKey,
-      });
-      
-      transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: fromKeypair.publicKey,
-          toPubkey: toPublicKey,
-          lamports: Math.floor(amount * 1e9), // Convert SOL to lamports
-        })
-      );
-      
-      const signature = await sendAndConfirmTransaction(connection, transaction, [fromKeypair], {
+      // private_key is stored as JSONB (array of numbers); convert to Uint8Array
+  const secretArr: number[] = Array.isArray(wallet.private_key)
+        ? wallet.private_key
+        : (wallet.private_key?.data || wallet.private_key?.secretKey || []);
+  const secretKey = new Uint8Array(secretArr);
+  if (!secretKey?.length) throw new Error('Missing private key');
+
+  // Dynamically import Keypair and sendAndConfirmTransaction so the
+  // crypto polyfill (getRandomValues) is loaded first in native environments.
+  const web3 = await import('@solana/web3.js');
+  const Keypair = web3.Keypair ?? web3.default?.Keypair;
+  const sendAndConfirmTransaction = web3.sendAndConfirmTransaction ?? web3.default?.sendAndConfirmTransaction;
+  if (!Keypair || !sendAndConfirmTransaction) throw new Error('Failed to load Solana web3 utilities');
+  const fromKeypair = Keypair.fromSecretKey(secretKey);
+
+  const clusterApiUrl = web3.clusterApiUrl ?? web3.default?.clusterApiUrl;
+  const PublicKey = web3.PublicKey ?? web3.default?.PublicKey;
+  const SystemProgram = web3.SystemProgram ?? web3.default?.SystemProgram;
+  if (!clusterApiUrl || !PublicKey || !SystemProgram) throw new Error('Missing web3 utilities');
+  const connection = new web3.Connection(clusterApiUrl('devnet'), 'confirmed');
+  const toPublicKey = new PublicKey(recipient);
+
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+  const TransactionCtor = web3.Transaction ?? web3.default?.Transaction;
+  if (!TransactionCtor) throw new Error('Missing Transaction constructor');
+  const transaction = new TransactionCtor({ blockhash, lastValidBlockHeight, feePayer: fromKeypair.publicKey });
+      transaction.add(SystemProgram.transfer({
+        fromPubkey: fromKeypair.publicKey,
+        toPubkey: toPublicKey,
+        lamports: Math.floor(amount * 1e9),
+      }));
+
+  const signature = await sendAndConfirmTransaction(connection, transaction, [fromKeypair], {
         commitment: 'confirmed',
         preflightCommitment: 'confirmed',
       });
-      
-      // Wait a bit for confirmation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Verify the transaction was successful
+
+      // Brief delay then verify
+      await new Promise((r) => setTimeout(r, 1200));
       const txInfo = await connection.getTransaction(signature, { commitment: 'confirmed' });
-      if (!txInfo) {
-        throw new Error('Transaction not found');
-      }
-      
+      if (!txInfo) throw new Error('Transaction not found');
       return signature;
     } catch (error: any) {
       console.error('Send SOL error:', error);
-      if (error.message?.includes('insufficient funds')) {
-        throw new Error('Insufficient funds for transaction');
-      } else if (error.message?.includes('blockhash not found')) {
-        throw new Error('Transaction expired, please try again');
-      } else {
-        throw new Error(`Transaction failed: ${error.message || 'Unknown error'}`);
-      }
+      const msg = error?.message || '';
+      if (msg.includes('insufficient funds')) throw new Error('Insufficient funds for transaction');
+      if (msg.includes('blockhash not found')) throw new Error('Transaction expired, please try again');
+      throw new Error(`Transaction failed: ${msg || 'Unknown error'}`);
     }
   };
 

@@ -79,8 +79,10 @@ export default function SendModal() {
 
   const executeSend = async () => {
     const amt = Number(amount);
+    if (loading) return; // guard against double execution
     try {
       setLoading(true);
+      // disable confirm button via loading prop passed to ConfirmModal
       const signature = await sendSol(recipient, amt);
       toast.push(`Transaction successful! ${signature.slice(0, 8)}...`, { type: 'success' });
       setConfirmVisible(false);

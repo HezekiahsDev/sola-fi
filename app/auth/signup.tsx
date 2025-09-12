@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { StyleSheet, Image, View as RNView, Alert, ActivityIndicator, View as NativeView } from 'react-native';
 import { View, Text } from '@/components/Themed';
@@ -8,7 +9,8 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import InputField from '@/components/ui/InputField';
 import { useToast } from '@/components/ui/Toast';
-import { Keypair } from '@solana/web3.js';
+// Note: import Keypair dynamically inside the handler so the crypto polyfill
+// is evaluated before any module that depends on web crypto.
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -45,12 +47,39 @@ export default function SignupScreen() {
     }
 
   try {
-      setLoading(true);
+  setLoading(true);
+
+      // Ensure Keypair is imported after the getRandomValues polyfill is active
+      let web3: any = null;
+      try {
+        web3 = await import('@solana/web3.js');
+      } catch (imErr: any) {
+        console.error('Failed to import @solana/web3.js', imErr);
+        Alert.alert('Signup error', `Failed to load wallet library: ${imErr?.message || String(imErr)}`);
+        setLoading(false);
+        return;
+      }
+
+      const Keypair = web3.Keypair ?? web3.default?.Keypair;
+      if (!Keypair) {
+        console.error('Keypair not found on imported module', web3);
+        Alert.alert('Signup error', 'Keypair constructor unavailable after importing @solana/web3.js');
+        setLoading(false);
+        return;
+      }
 
       // Create a new Solana wallet
-      const keypair = Keypair.generate();
+      let keypair: any;
+      try {
+        keypair = Keypair.generate();
+      } catch (kpErr: any) {
+        console.error('Keypair.generate failed', kpErr);
+        Alert.alert('Signup error', `Failed to generate keypair: ${kpErr?.message || String(kpErr)}`);
+        setLoading(false);
+        return;
+      }
       const publicKey = keypair.publicKey.toBase58();
-  const privateKey = Array.from(keypair.secretKey);
+      const privateKey = Array.from(keypair.secretKey);
 
 
       const { data, error } = await supabase.auth.signUp(
