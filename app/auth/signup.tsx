@@ -11,9 +11,12 @@ import InputField from '@/components/ui/InputField';
 import { useToast } from '@/components/ui/Toast';
 // Note: import Keypair dynamically inside the handler so the crypto polyfill
 // is evaluated before any module that depends on web crypto.
+import { BackHandler } from 'react-native';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -135,6 +138,20 @@ export default function SignupScreen() {
       setLoading(false);
     }
   };
+
+  // Prevent authenticated users from staying on signup and block back navigation
+  React.useEffect(() => {
+    if (user) router.replace('/(tabs)');
+  }, [user, router]);
+
+  React.useEffect(() => {
+    const onBack = () => {
+      if (user) return true;
+      return false;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, [user]);
 
   return (
   <AnimatedGradient staticMode style={styles.container}>

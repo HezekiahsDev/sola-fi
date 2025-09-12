@@ -4,6 +4,7 @@ import { View, Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { BackHandler } from 'react-native';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/components/ui/Toast';
 import AnimatedGradient from '@/components/ui/AnimatedGradient';
@@ -18,6 +19,24 @@ export default function LoginScreen() {
   
   const { signIn, loading: authLoading } = useAuth();
   const toast = useToast();
+  const router = useRouter();
+  const { user } = useAuth();
+
+  // If already authenticated, redirect away from login and prevent back
+  React.useEffect(() => {
+    if (user) {
+      router.replace('/(tabs)');
+    }
+  }, [user, router]);
+
+  React.useEffect(() => {
+    const onBack = () => {
+      if (user) return true; // block back when authenticated
+      return false;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, [user]);
 
   async function handleLogin() {
     if (!email || !password) return;
@@ -34,7 +53,6 @@ export default function LoginScreen() {
     toast.push('Signed in successfully', { type: 'success' });
     // AuthProvider route guard will redirect to /(tabs)
   }
-  const router = useRouter();
   const search = useLocalSearchParams();
   // Removed success banner to prevent layout shifts; toast handles feedback.
   return (
