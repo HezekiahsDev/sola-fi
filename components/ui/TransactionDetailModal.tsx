@@ -1,16 +1,16 @@
-import React from 'react';
-import { Modal, StyleSheet, View, Pressable } from 'react-native';
-import { Text } from '@/components/Themed';
-import PrimaryButton from '@/components/ui/PrimaryButton';
-import Colors from '@/constants/Colors';
+import React from "react";
+import { Modal, StyleSheet, View, Pressable } from "react-native";
+import { Text } from "@/components/Themed";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+import Colors from "@/constants/Colors";
 
 type Transaction = {
   id: string;
-  type: 'sent' | 'received';
+  type: "sent" | "received";
   title: string;
   date: string;
   amount: string;
-  status: 'Completed' | 'Pending' | 'Failed';
+  status: "Completed" | "Pending" | "Failed";
 };
 
 type Props = {
@@ -19,25 +19,34 @@ type Props = {
   onClose: () => void;
 };
 
-export default function TransactionDetailModal({ visible, transaction, onClose }: Props) {
+export default function TransactionDetailModal({
+  visible,
+  transaction,
+  onClose,
+}: Props) {
   // Always render the Modal when visible is true so the backdrop and animations
   // are visible even if transaction data is not yet available.
 
-  const getStatusColor = (status: Transaction['status']) => {
+  const getStatusColor = (status: Transaction["status"]) => {
     switch (status) {
-      case 'Completed':
-        return '#4ade80'; // green-400
-      case 'Pending':
-        return '#facc15'; // yellow-400
-      case 'Failed':
-        return '#f87171'; // red-400
+      case "Completed":
+        return "#4ade80"; // green-400
+      case "Pending":
+        return "#facc15"; // yellow-400
+      case "Failed":
+        return "#f87171"; // red-400
       default:
         return Colors.dark.muted;
     }
   };
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       {/* Use the same overlay pattern as ConfirmModal to ensure consistent touch handling */}
       <Pressable style={styles.overlay} onPress={onClose}>
         <View style={styles.card}>
@@ -52,7 +61,9 @@ export default function TransactionDetailModal({ visible, transaction, onClose }
 
               <View style={styles.detailRow}>
                 <Text style={styles.label}>Type</Text>
-                <Text style={[styles.value, { textTransform: 'capitalize' }]}>{transaction.type}</Text>
+                <Text style={[styles.value, { textTransform: "capitalize" }]}>
+                  {transaction.type}
+                </Text>
               </View>
 
               <View style={styles.detailRow}>
@@ -72,14 +83,32 @@ export default function TransactionDetailModal({ visible, transaction, onClose }
 
               <View style={styles.detailRow}>
                 <Text style={styles.label}>Status</Text>
-                <Text style={[styles.value, { color: getStatusColor(transaction.status) }]}>{transaction.status}</Text>
+                <Text
+                  style={[
+                    styles.value,
+                    { color: getStatusColor(transaction.status) },
+                  ]}
+                >
+                  {transaction.status}
+                </Text>
               </View>
             </>
           ) : (
-            <Text style={[styles.message, { textAlign: 'center', marginVertical: 16 }]}>Loading transaction details…</Text>
+            <Text
+              style={[
+                styles.message,
+                { textAlign: "center", marginVertical: 16 },
+              ]}
+            >
+              Loading transaction details…
+            </Text>
           )}
 
-          <PrimaryButton title="Close" onPress={onClose} style={{ marginTop: 20 }} />
+          <PrimaryButton
+            title="Close"
+            onPress={onClose}
+            style={{ marginTop: 20 }}
+          />
         </View>
       </Pressable>
     </Modal>
@@ -89,25 +118,25 @@ export default function TransactionDetailModal({ visible, transaction, onClose }
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   card: {
-    width: '100%',
+    width: "100%",
     maxWidth: 520,
-    backgroundColor: 'rgba(18,18,18,0.9)',
+    backgroundColor: "rgba(18,18,18,0.9)",
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   message: {
     color: Colors.dark.muted,
@@ -116,21 +145,21 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-    backgroundColor: 'transparent',
+    borderBottomColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "transparent",
   },
   label: {
     color: Colors.dark.muted,
     fontSize: 14,
   },
   value: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
