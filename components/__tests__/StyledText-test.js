@@ -1,10 +1,22 @@
-import * as React from 'react';
-import renderer from 'react-test-renderer';
+import * as React from "react";
+import renderer, { act } from "react-test-renderer";
 
-import { MonoText } from '../StyledText';
+import { MonoText } from "../StyledText";
+
+jest.mock("../useColorScheme", () => ({
+  useColorScheme: () => "light",
+}));
 
 it(`renders correctly`, () => {
-  const tree = renderer.create(<MonoText>Snapshot test!</MonoText>).toJSON();
+  let rendered;
 
-  expect(tree).toMatchSnapshot();
+  act(() => {
+    rendered = renderer.create(<MonoText>Snapshot test!</MonoText>);
+  });
+
+  expect(rendered.toJSON()).toMatchSnapshot();
+
+  act(() => {
+    rendered.unmount();
+  });
 });

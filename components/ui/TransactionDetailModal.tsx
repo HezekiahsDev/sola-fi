@@ -2,7 +2,6 @@ import React from 'react';
 import { Modal, StyleSheet, View, Pressable } from 'react-native';
 import { Text } from '@/components/Themed';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { BlurView } from 'expo-blur';
 import Colors from '@/constants/Colors';
 
 type Transaction = {
