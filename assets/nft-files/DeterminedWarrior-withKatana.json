@@ -1,0 +1,32 @@
+{
+  "name": "Determined Warrior with Katana",
+  "symbol": "DWKATANA",
+  "description": "A fierce and determined warrior wielding a legendary katana, embodying strength, honor, and unwavering resolve.",
+  "seller_fee_basis_points": 500,
+  "image": "ipfs://bafybeidewvdhrkaiephqprszdg36a5s7noe2rbdax6u7tvq6buquewxrnu",
+  "attributes": [
+    { "trait_type": "Character Type", "value": "Warrior" },
+    { "trait_type": "Weapon", "value": "Katana" },
+    { "trait_type": "Stance", "value": "Combat Ready" },
+    { "trait_type": "Rarity", "value": "Epic" },
+    { "trait_type": "Element", "value": "Steel" }
+  ],
+  "properties": {
+    "creators": [
+      {
+        "address": "Hk4SLf7dBbHmDwHtWhHJT25oxjTM5DgU9AEusWV5vgKg",
+        "share": 100
+      }
+    ],
+    "files": [
+      {
+        "uri": "ipfs://bafybeidewvdhrkaiephqprszdg36a5s7noe2rbdax6u7tvq6buquewxrnu",
+        "type": "image/png"
+      }
+    ]
+  },
+  "collection": {
+    "name": "Warrior Collection",
+    "family": "WarriorFamily"
+  }
+}

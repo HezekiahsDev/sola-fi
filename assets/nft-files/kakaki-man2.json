@@ -1,0 +1,34 @@
+{
+  "name": "Kakaki Man #2",
+  "symbol": "KAKAKIMAN2",
+  "description": "The second legendary Kakaki artist, distinguished by his fierce and powerful performances. A complementary figure to the first Kakaki Man, together they create the royal fanfare.",
+  "seller_fee_basis_points": 500,
+  "image": "ipfs://bafybeiculrqeibxjv36k4uawnlkhc6dkprlbq2z3rs4tpnixypkecaag5m",
+  "attributes": [
+    { "trait_type": "Character", "value": "Kakaki Man" },
+    { "trait_type": "Series", "value": "Second Edition" },
+    { "trait_type": "Personality", "value": "Fierce" },
+    { "trait_type": "Rarity", "value": "Legendary" },
+    { "trait_type": "Status", "value": "Artist" },
+    { "trait_type": "Culture", "value": "Hausa" },
+    { "trait_type": "Instrument", "value": "Kakaki" }
+  ],
+  "properties": {
+    "creators": [
+      {
+        "address": "Hk4SLf7dBbHmDwHtWhHJT25oxjTM5DgU9AEusWV5vgKg",
+        "share": 100
+      }
+    ],
+    "files": [
+      {
+        "uri": "ipfs://bafybeiculrqeibxjv36k4uawnlkhc6dkprlbq2z3rs4tpnixypkecaag5m",
+        "type": "image/png"
+      }
+    ]
+  },
+  "collection": {
+    "name": "The Kakaki Collection",
+    "family": "KakakiFamily"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Kakaki Art Masterpiece",
+  "symbol": "KAKAKIART",
+  "description": "A stunning artistic representation of the Kakaki, a three to four-meter-long metal trumpet used in Hausa traditional ceremonial music. Its sound is associated with royalty and it is only played at events at the palace of the king or sultan.",
+  "seller_fee_basis_points": 500,
+  "image": "ipfs://bafybeidol6shbpyg3ja74zkwihu67quyzymn3vvjg3swksvbj7xwjk5yyq",
+  "attributes": [
+    { "trait_type": "Art Style", "value": "Traditional" },
+    { "trait_type": "Culture", "value": "Hausa" },
+    { "trait_type": "Instrument", "value": "Kakaki" },
+    { "trait_type": "Medium", "value": "Digital Art" },
+    { "trait_type": "Rarity", "value": "Rare" },
+    { "trait_type": "Color Scheme", "value": "Vibrant" }
+  ],
+  "properties": {
+    "creators": [
+      {
+        "address": "Hk4SLf7dBbHmDwHtWhHJT25oxjTM5DgU9AEusWV5vgKg",
+        "share": 100
+      }
+    ],
+    "files": [
+      {
+        "uri": "ipfs://bafybeidol6shbpyg3ja74zkwihu67quyzymn3vvjg3swksvbj7xwjk5yyq",
+        "type": "image/png"
+      }
+    ]
+  },
+  "collection": {
+    "name": "The Kakaki Collection",
+    "family": "KakakiFamily"
+  }
+}
