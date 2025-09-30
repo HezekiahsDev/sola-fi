@@ -39,23 +39,16 @@ export default function NFTScreen() {
     const fetchNfts = async () => {
       try {
         setLoading(true);
-        console.log("Fetching NFTs from Supabase...");
-        const {
-          data,
-          error: dbError,
-          status,
-        } = await supabase.from("nfts").select("*").eq("status", "on_sale");
-
-        console.log("Supabase response status:", status);
-        console.log("Supabase response data:", JSON.stringify(data, null, 2));
+        const { data, error: dbError } = await supabase
+          .from("nfts")
+          .select("*")
+          .eq("status", "on_sale");
 
         if (dbError) {
-          console.error("Supabase error:", dbError.message);
           throw new Error(dbError.message);
         }
 
         if (!data) {
-          console.log("No data returned from Supabase.");
           setNfts([]);
           return;
         }
@@ -69,9 +62,7 @@ export default function NFTScreen() {
         );
 
         setNfts(enrichedNfts);
-        console.log("Enriched NFTs set to state:", enrichedNfts.length);
       } catch (e: any) {
-        console.error("Error in fetchNfts:", e.message);
         setError(e.message);
       } finally {
         setLoading(false);
