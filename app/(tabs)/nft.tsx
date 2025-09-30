@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -11,57 +10,74 @@ import { Text, View } from "@/components/Themed";
 import Colors from "@/constants/Colors";
 import { supabase } from "@/lib/supabase";
 
-type RawNft = {
+type Nft = {
+  id: number;
   name: string;
   image: string;
   mintAddress: string;
   signature: string;
   price?: number;
+  status: "on_sale" | "owned" | "pending";
 };
 
-type NftCard = RawNft & { price: number };
+type NftCard = Nft & { price: number };
 
 const defaultPrices = [18.6, 9.4, 7.25, 6.8, 5.5];
-const fallbackNfts = require("../../nfts.json") as RawNft[];
-
-const withPrices = (items: RawNft[]): NftCard[] =>
-  items.map((item, index) => ({
-    ...item,
-    price: item.price ?? defaultPrices[index % defaultPrices.length],
-  }));
-
-type NftRow = RawNft & {
-  id?: string;
-  status?: string;
-};
 
 const truncateAddress = (address: string) =>
   `${address.slice(0, 4)}…${address.slice(-4)}`;
 
 export default function NFTScreen() {
   const [nfts, setNfts] = useState<NftCard[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchNfts = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("nfts").select("*");
-
-    if (error) {
-      console.error("Error fetching NFTs:", error);
-    } else {
-      setNfts(
-        data.map((item: RawNft, index: number) => ({
-          ...item,
-          price: item.price ?? defaultPrices[index % defaultPrices.length],
-        }))
-      );
-    }
-    setLoading(false);
-  }, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchNfts = async () => {
+      try {
+        setLoading(true);
+        const { data, error: dbError } = await supabase
+          .from("nfts")
+          .select("*")
+          .eq("status", "on_sale");
+
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+
+        const enrichedNfts: NftCard[] = data.map(
+          (item: Nft, index: number) => ({
+            ...item,
+            price: item.price ?? defaultPrices[index % defaultPrices.length],
+          })
+        );
+
+        setNfts(enrichedNfts);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchNfts();
-  }, [fetchNfts]);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text>Loading collections...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>Failed to load NFTs: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -76,58 +92,50 @@ export default function NFTScreen() {
         <Text style={styles.subtitle}>Browse the latest SolaFi drops</Text>
       </View>
 
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={Colors.dark.accentAqua}
-          style={styles.loader}
-        />
-      ) : (
-        <FlatList
-          data={nfts}
-          keyExtractor={(item) => item.mintAddress}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <Pressable style={styles.card}>
-              <Image source={{ uri: item.image }} style={styles.image} />
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                <View style={styles.cardMetaRow}>
-                  <View style={styles.cardMeta}>
-                    <Text style={styles.cardPrice}>
-                      {item.price.toFixed(2)} SOL
-                    </Text>
-                    <Text style={styles.cardMint}>
-                      {truncateAddress(item.mintAddress)}
-                    </Text>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => {}}
-                    style={({ pressed }) => [
-                      styles.buyButton,
-                      pressed && styles.buyButtonPressed,
-                    ]}
-                  >
-                    <Text style={styles.buyButtonText}>Buy</Text>
-                  </Pressable>
+      <FlatList
+        data={nfts}
+        keyExtractor={(item) => item.mintAddress}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => (
+          <Pressable style={styles.card}>
+            <Image source={{ uri: item.image }} style={styles.image} />
+            <View style={styles.cardBody}>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <View style={styles.cardMetaRow}>
+                <View style={styles.cardMeta}>
+                  <Text style={styles.cardPrice}>
+                    {item.price.toFixed(2)} SOL
+                  </Text>
+                  <Text style={styles.cardMint}>
+                    {truncateAddress(item.mintAddress)}
+                  </Text>
                 </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {}}
+                  style={({ pressed }) => [
+                    styles.buyButton,
+                    pressed && styles.buyButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.buyButtonText}>Buy</Text>
+                </Pressable>
               </View>
-            </Pressable>
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No NFTs yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Once you mint assets, they will appear here.
-              </Text>
             </View>
-          )}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+          </Pressable>
+        )}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No NFTs yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Once you mint assets, they will appear here.
+            </Text>
+          </View>
+        )}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
@@ -135,7 +143,16 @@ export default function NFTScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
+  },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: Colors.dark.error,
+    fontSize: 16,
+    textAlign: "center",
+    paddingHorizontal: 24,
   },
   header: {
     paddingTop: 72,
@@ -188,7 +205,7 @@ const styles = StyleSheet.create({
   cardPrice: {
     fontSize: 14,
     fontWeight: "500",
-    color: Colors.dark.accentAqua,
+    color: Colors.dark.text,
   },
   cardMint: {
     fontSize: 12,
@@ -208,14 +225,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: Colors.dark.primaryDeep,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.dark.primaryTint,
+    backgroundColor: Colors.dark.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   buyButtonPressed: {
-    backgroundColor: Colors.dark.primaryTint,
+    backgroundColor: Colors.dark.primaryDeep,
   },
   buyButtonText: {
     fontSize: 14,
@@ -238,10 +253,5 @@ const styles = StyleSheet.create({
     color: Colors.dark.muted,
     textAlign: "center",
     paddingHorizontal: 24,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
 });

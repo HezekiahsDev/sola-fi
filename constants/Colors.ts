@@ -12,31 +12,31 @@
 
 // Design tokens (base/palette) - keep semantic naming distinct from theme slots.
 const palette = {
-  primary: '#6C63FF',
-  primaryDeep: '#3E2F7F',
-  primaryTint: '#B5A8FF',
-  accentAqua: '#3DDC97',
-  accentPink: '#FF4F9A',
-  accentGold: '#F5B700',
-  backgroundDark: '#121212',
-  backgroundLight: '#FFFFFF',
+  primary: "#6C63FF",
+  primaryDeep: "#3E2F7F",
+  primaryTint: "#B5A8FF",
+  accentAqua: "#3DDC97",
+  accentPink: "#FF4F9A",
+  accentGold: "#F5B700",
+  backgroundDark: "#121212",
+  backgroundLight: "#FFFFFF",
   // Derived/supporting neutrals & surfaces
-  surfaceDark: '#1A1624', // slightly lifted from dark bg with purple influence
-  surfaceLight: '#F7F7FA',
-  borderDark: '#272238',
-  borderLight: '#E3E1EC',
-  textOnDark: '#EDEDED',
-  textOnLight: '#1A1A1A',
-  textSecondaryDark: '#A0A0B2',
-  textSecondaryLight: '#575766',
+  surfaceDark: "#1A1624", // slightly lifted from dark bg with purple influence
+  surfaceLight: "#F7F7FA",
+  borderDark: "#272238",
+  borderLight: "#E3E1EC",
+  textOnDark: "#EDEDED",
+  textOnLight: "#1A1A1A",
+  textSecondaryDark: "#A0A0B2",
+  textSecondaryLight: "#575766",
   // Feedback & status (map where possible to brand accents)
-  success: '#3DDC97',
-  error: '#EF4444',
-  warning: '#F5B700',
-  info: '#6C63FF', // primary as info highlight
+  success: "#3DDC97",
+  error: "#EF4444",
+  warning: "#F5B700",
+  info: "#6C63FF", // primary as info highlight
 };
 
-export type AppColorName = keyof typeof palette | 'tint';
+export type AppColorName = keyof typeof palette | "tint";
 
 export default {
   light: {
@@ -56,6 +56,7 @@ export default {
     accentAqua: palette.accentAqua,
     accentPink: palette.accentPink,
     accentGold: palette.accentGold,
+    primary: palette.primary,
     primaryDeep: palette.primaryDeep,
     primaryTint: palette.primaryTint,
   },
@@ -72,6 +73,8 @@ export default {
     error: palette.error,
     warning: palette.warning,
     info: palette.info,
+    // Extended brand accents (optional usage in components)
+    primary: palette.primary,
     accentAqua: palette.accentAqua,
     accentPink: palette.accentPink,
     accentGold: palette.accentGold,
