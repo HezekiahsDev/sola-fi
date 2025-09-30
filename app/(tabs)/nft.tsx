@@ -11,16 +11,19 @@ import Colors from "@/constants/Colors";
 import { supabase } from "@/lib/supabase";
 
 type Nft = {
-  id: number;
+  id: string;
   name: string;
   image: string;
-  mintAddress: string;
+  mintaddress: string;
   signature: string;
   price?: number;
   status: "on_sale" | "owned" | "pending";
 };
 
-type NftCard = Nft & { price: number };
+type NftCard = Omit<Nft, "mintaddress"> & {
+  mintAddress: string;
+  price: number;
+};
 
 const defaultPrices = [18.6, 9.4, 7.25, 6.8, 5.5];
 
@@ -36,24 +39,39 @@ export default function NFTScreen() {
     const fetchNfts = async () => {
       try {
         setLoading(true);
-        const { data, error: dbError } = await supabase
-          .from("nfts")
-          .select("*")
-          .eq("status", "on_sale");
+        console.log("Fetching NFTs from Supabase...");
+        const {
+          data,
+          error: dbError,
+          status,
+        } = await supabase.from("nfts").select("*").eq("status", "on_sale");
+
+        console.log("Supabase response status:", status);
+        console.log("Supabase response data:", JSON.stringify(data, null, 2));
 
         if (dbError) {
+          console.error("Supabase error:", dbError.message);
           throw new Error(dbError.message);
+        }
+
+        if (!data) {
+          console.log("No data returned from Supabase.");
+          setNfts([]);
+          return;
         }
 
         const enrichedNfts: NftCard[] = data.map(
           (item: Nft, index: number) => ({
             ...item,
+            mintAddress: item.mintaddress,
             price: item.price ?? defaultPrices[index % defaultPrices.length],
           })
         );
 
         setNfts(enrichedNfts);
+        console.log("Enriched NFTs set to state:", enrichedNfts.length);
       } catch (e: any) {
+        console.error("Error in fetchNfts:", e.message);
         setError(e.message);
       } finally {
         setLoading(false);
@@ -94,7 +112,7 @@ export default function NFTScreen() {
 
       <FlatList
         data={nfts}
-        keyExtractor={(item) => item.mintAddress}
+        keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.listContent}
