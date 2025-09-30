@@ -58,6 +58,7 @@ function GlassTabBar({ state, descriptors, navigation }: any) {
           index: "credit-card",
           pay: "dollar-sign",
           transactions: "activity",
+          nft: "image",
           profile: "user",
         };
         const iconName = iconMap[route.name] || "circle";
@@ -111,6 +112,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: "Wallet" }} />
       <Tabs.Screen name="pay" options={{ title: "Pay" }} />
       <Tabs.Screen name="transactions" options={{ title: "Txs" }} />
+      <Tabs.Screen name="nft" options={{ title: "NFTs" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
@@ -139,9 +141,9 @@ const styles = StyleSheet.create({
     left: 12,
     height: 44,
     borderRadius: 14,
-    backgroundColor: "rgba(168, 85, 247, 0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(168, 85, 247, 0.4)",
+    // backgroundColor: "rgba(168, 85, 247, 0.15)",
+    // borderWidth: 1,
+    // borderColor: "rgba(168, 85, 247, 0.4)",
   },
   tabItem: {
     flex: 1,
