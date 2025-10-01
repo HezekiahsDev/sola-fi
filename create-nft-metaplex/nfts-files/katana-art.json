@@ -1,0 +1,32 @@
+{
+  "name": "Katana Artistic Masterwork",
+  "symbol": "KATANAART",
+  "description": "An exquisite artistic representation of the legendary katana blade, showcasing the beauty and craftsmanship of traditional Japanese sword-making artistry.",
+  "seller_fee_basis_points": 500,
+  "image": "ipfs://bafybeih5wieinw6vtscakkepbbf5hn3bmbtwism7rhyevri5dxa5sop6n4",
+  "attributes": [
+    { "trait_type": "Weapon Type", "value": "Katana" },
+    { "trait_type": "Art Style", "value": "Traditional Japanese" },
+    { "trait_type": "Craftsmanship", "value": "Master Level" },
+    { "trait_type": "Rarity", "value": "Epic" },
+    { "trait_type": "Element", "value": "Steel & Honor" }
+  ],
+  "properties": {
+    "creators": [
+      {
+        "address": "Hk4SLf7dBbHmDwHtWhHJT25oxjTM5DgU9AEusWV5vgKg",
+        "share": 100
+      }
+    ],
+    "files": [
+      {
+        "uri": "ipfs://bafybeih5wieinw6vtscakkepbbf5hn3bmbtwism7rhyevri5dxa5sop6n4",
+        "type": "image/png"
+      }
+    ]
+  },
+  "collection": {
+    "name": "Blade Art Collection",
+    "family": "BladeFamily"
+  }
+}
